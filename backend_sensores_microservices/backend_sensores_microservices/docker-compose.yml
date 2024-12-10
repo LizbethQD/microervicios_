@@ -1,0 +1,88 @@
+version: '3'
+services:
+  auth-service:
+    build: ./services/auth
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DB_HOST=auth-db
+      - DB_PORT=3306   # Puerto de la base de datos
+      - DB_NAME=authdb
+      - DB_USER=root
+      - DB_PASS=rootpassword
+      - DB_DIALECT=mysql
+    command: /usr/local/bin/wait-for-it auth-db:3306 -- npm start
+    networks:
+      - backend
+
+  sensors-service:
+    build: ./services/sensors
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - DB_HOST=sensors-db
+      - DB_PORT=3306   # Puerto de la base de datos
+      - DB_NAME=sensorsdb
+      - DB_USER=root
+      - DB_PASS=rootpassword
+      - DB_DIALECT=mysql
+    command: /usr/local/bin/wait-for-it sensors-db:3306 -- npm start
+    networks:
+      - backend
+
+  catalog-service:
+    build: ./services/catalog
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - DB_HOST=catalog-db
+      - DB_PORT=3306   # Puerto de la base de datos
+      - DB_NAME=catalogdb
+      - DB_USER=root
+      - DB_PASS=rootpassword
+      - DB_DIALECT=mysql
+    command: /usr/local/bin/wait-for-it catalog-db:3306 -- npm start
+    networks:
+      - backend
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "80:5000"
+    depends_on:
+      - auth-service
+      - sensors-service
+      - catalog-service
+    networks:
+      - backend
+
+  auth-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: authdb
+    networks:
+      - backend
+
+  sensors-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: sensorsdb
+    networks:
+      - backend
+
+  catalog-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: catalogdb
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
